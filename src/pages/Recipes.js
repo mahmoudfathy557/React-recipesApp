@@ -5,8 +5,24 @@ export default class Recipes extends Component {
   state = {
     recipes: [],
     search: '',
-    query: 'meat',
+    query: 'chicken',
     loading: true,
+    error: '',
+  }
+
+  async getRecipes() {
+    const response = await fetch(
+      `https://api.edamam.com/search?q=${this.state.query}&app_id=${process.env.REACT_APP_API_ID}&app_key=${process.env.REACT_APP_API_KEY}`
+    )
+    const data = await response.json()
+    if (data.hits.length === 0) {
+      this.setState({
+        error:
+          'sorry but your search did not return any recipes, please try again',
+      })
+    } else {
+      this.setState({ recipes: data.hits, loading: false, error: '' })
+    }
   }
 
   handleChange = (e) => {
@@ -16,21 +32,13 @@ export default class Recipes extends Component {
   }
   handleSubmit = (e) => {
     e.preventDefault()
+    const { search } = this.state
+    this.setState({ query: search, search: '' }, () => this.getRecipes())
+    console.log(search, 'searchhhhhhh')
   }
 
   componentDidMount() {
-    const APP_ID = '6cef7119'
-    const App_KEY = `${process.env.REACT_APP_API_KEY}`
-
-    const getRecipes = async () => {
-      const response = await fetch(
-        `https://api.edamam.com/search?q=${this.state.query}&app_id=${APP_ID}&app_key=${App_KEY}`
-      )
-      const data = await response.json()
-      this.setState({ recipes: data.hits, loading: false })
-    }
-
-    getRecipes()
+    this.getRecipes()
   }
 
   render() {
@@ -41,8 +49,22 @@ export default class Recipes extends Component {
           handleChange={this.handleChange}
           handleSubmit={this.handleSubmit}
         />
-
-        <RecipeList recipes={this.state.recipes} loading={this.state.loading} />
+        {this.state.error ? (
+          <section>
+            <div className='row'>
+              <div className='col'>
+                <h2 className='text-orange text-center text-uppercase mt-5'>
+                  {this.state.error}
+                </h2>
+              </div>
+            </div>
+          </section>
+        ) : (
+          <RecipeList
+            recipes={this.state.recipes}
+            loading={this.state.loading}
+          />
+        )}
       </>
     )
   }
